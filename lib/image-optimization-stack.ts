@@ -42,7 +42,6 @@ export class ImageOptimizationStack extends Stack {
       runtime: lambda.Runtime.NODEJS_20_X,
       handler: 'index.handler',
       code: lambda.Code.fromAsset('functions/image-processing'),
-      role: myRole,
       timeout: Duration.seconds(parseInt(LAMBDA_TIMEOUT)),
       memorySize: parseInt(LAMBDA_MEMORY),
       environment: {
@@ -83,21 +82,6 @@ export class ImageOptimizationStack extends Stack {
       code: cloudfront.FunctionCode.fromFile({ filePath: 'functions/url-rewrite/index.js', }),
       functionName: `urlRewriteFunction-${this.node.addr}`,
     });
-
-    var imageDeliveryCacheBehaviorConfig: ImageDeliveryCacheBehaviorConfig = {
-      origin: imageOrigin,
-      viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
-      cachePolicy: new cloudfront.CachePolicy(this, `ImageCachePolicy${this.node.addr}`, {
-        defaultTtl: Duration.hours(24),
-        maxTtl: Duration.days(365),
-        minTtl: Duration.seconds(0),
-        queryStringBehavior: cloudfront.CacheQueryStringBehavior.all()
-      }),
-      functionAssociations: [{
-        eventType: cloudfront.FunctionEventType.VIEWER_REQUEST,
-        function: urlRewriteFunction,
-      }],
-    }
 
     new CfnOutput(this, 'LambdaURL', {
       description: 'Domain name of LambdaURL',
