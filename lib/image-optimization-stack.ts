@@ -24,7 +24,7 @@ export class ImageOptimizationStack extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props);
 
-    const IMAGE_DOMAIN_NAME = this.node.tryGetContext('DEPLOY_SAMPLE_WEBSITE');
+    const IMAGE_DOMAIN_NAME = this.node.tryGetContext('IMAGE_DOMAIN_NAME');
     if (!IMAGE_DOMAIN_NAME) throw Error ('provide the domain name of image source, -c IMAGE_DOMAIN_NAME=images.example.com');
 
     var transformedImageBucket = new s3.Bucket(this, 's3-transformed-image-bucket', {
