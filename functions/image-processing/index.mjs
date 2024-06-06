@@ -5,7 +5,6 @@ import { GetObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3
 import Sharp from 'sharp';
 
 const s3Client = new S3Client();
-//const S3_ORIGINAL_IMAGE_BUCKET = process.env.originalImageBucketName;
 const ORIGINAL_IMAGE_DOMAIN_NAME = process.env.originalImageDomainName;
 const S3_TRANSFORMED_IMAGE_BUCKET = process.env.transformedImageBucketName;
 const TRANSFORMED_IMAGE_CACHE_TTL = process.env.transformedImageCacheTTL;
