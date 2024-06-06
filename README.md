@@ -12,7 +12,7 @@ cdk bootstrap
 ```
 
 Then customize the parameters in both files:
-* functions/urlrewrite/index.js -> e.g. quality parameter which is set to 90 by default
+* functions/urlrewrite/index.js -> e.g. quality parameter which is set to 70 by default
 * lib/image-optimization-stack.ts -> e.g. cache control set for transformed images, and after how many days they will be removed from the bucket
 
 Then you need to expose the images through a reachable domain to the Lambda. Either change the ALB security group to allow Lambda IPs, or create a new cloudfront distributions that point to your alb, and use the cloudfront domain name. this domain will be used by Lambda to fetch original images then trasnform them. 
@@ -34,7 +34,7 @@ In your web CloudFront distribution where you serve images, do the following:
 When you are ready for production, create a new CloudFron behavior for every image extension you want to optimze, with the following caracteristics:
 * path pattern = image extension (e.g. *.jpg)
 * origin = created origin group
-* CloudFront Function on viewer event = the created CloudFront Function name
+* CloudFront Function on viewer request event = the created CloudFront Function name (make sure you publish the function before)
 
 
 ## License

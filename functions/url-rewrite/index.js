@@ -4,11 +4,9 @@
 function handler(event) {
     var request = event.request;
     var format = 'jpeg';
-    var quality = 90; // TODO change to the desired value
+    var quality = 70; // TODO change to the desired value
     if (request.headers['accept']) {
-        if (request.headers['accept'].value.includes("avif")) {
-            format = 'avif';
-        } else if (request.headers['accept'].value.includes("webp")) {
+        if (request.headers['accept'].value.includes("webp")) {
             format = 'webp';
         } 
     }

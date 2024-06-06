@@ -15,7 +15,7 @@ var S3_TRANSFORMED_IMAGE_CACHE_TTL = 'max-age=31622400';
 // and request is redirect to the generated image. Otherwise, an application error is sent.
 var MAX_IMAGE_SIZE = '4700000';
 // Lambda Parameters
-var LAMBDA_MEMORY = '1500';
+var LAMBDA_MEMORY = '2000';
 var LAMBDA_TIMEOUT = '60';
 
 
