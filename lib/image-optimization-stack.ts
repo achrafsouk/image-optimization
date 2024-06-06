@@ -81,7 +81,7 @@ export class ImageOptimizationStack extends Stack {
     // Create a CloudFront Function for url rewrites
     const urlRewriteFunction = new cloudfront.Function(this, 'urlRewrite', {
       code: cloudfront.FunctionCode.fromFile({ filePath: 'functions/url-rewrite/index.js', }),
-      functionName: `urlRewriteFunction${this.node.addr}`,
+      functionName: `urlRewriteFunction-${this.node.addr}`,
     });
 
     var imageDeliveryCacheBehaviorConfig: ImageDeliveryCacheBehaviorConfig = {
@@ -99,9 +99,19 @@ export class ImageOptimizationStack extends Stack {
       }],
     }
 
-    new CfnOutput(this, 'ImageDeliveryDomain', {
+    new CfnOutput(this, 'LambdaURL', {
       description: 'Domain name of LambdaURL',
       value: imageProcessingDomainName
+    });
+
+    new CfnOutput(this, 'S3 bucket', {
+      description: 'created to store generated images',
+      value: transformedImageBucket.bucketName
+    });
+
+    new CfnOutput(this, 'CloudFront Function', {
+      description: 'name of the created CloudFront Function',
+      value: `urlRewriteFunction-${this.node.addr}`
     });
   }
 }
