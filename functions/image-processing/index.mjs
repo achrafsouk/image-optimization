@@ -5,7 +5,8 @@ import { GetObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3
 import Sharp from 'sharp';
 
 const s3Client = new S3Client();
-const S3_ORIGINAL_IMAGE_BUCKET = process.env.originalImageBucketName;
+//const S3_ORIGINAL_IMAGE_BUCKET = process.env.originalImageBucketName;
+const ORIGINAL_IMAGE_DOMAIN_NAME = process.env.originalImageDomainName;
 const S3_TRANSFORMED_IMAGE_BUCKET = process.env.transformedImageBucketName;
 const TRANSFORMED_IMAGE_CACHE_TTL = process.env.transformedImageCacheTTL;
 const MAX_IMAGE_SIZE = parseInt(process.env.maxImageSize);
@@ -24,14 +25,13 @@ export const handler = async (event) => {
     var startTime = performance.now();
     // Downloading original image
     let originalImageBody;
+    
     let contentType;
     try {
-        const getOriginalImageCommand = new GetObjectCommand({ Bucket: S3_ORIGINAL_IMAGE_BUCKET, Key: originalImagePath });
-        const getOriginalImageCommandOutput = await s3Client.send(getOriginalImageCommand);
-        console.log(`Got response from S3 for ${originalImagePath}`);
-
-        originalImageBody = getOriginalImageCommandOutput.Body.transformToByteArray();
-        contentType = getOriginalImageCommandOutput.ContentType;
+        const response = await fetch(`https://${ORIGINAL_IMAGE_DOMAIN_NAME}/${originalImagePath}`);
+        console.log(`Got response from ${ORIGINAL_IMAGE_DOMAIN_NAME} for ${originalImagePath}`);
+        originalImageBody =  response.arrayBuffer() //getOriginalImageCommandOutput.Body.transformToByteArray();
+        contentType = response.headers.get('content-type');// getOriginalImageCommandOutput.ContentType;
     } catch (error) {
         return sendError(500, 'Error downloading original image', error);
     }
@@ -77,41 +77,36 @@ export const handler = async (event) => {
     // handle gracefully generated images bigger than a specified limit (e.g. Lambda output object limit)
     const imageTooBig = Buffer.byteLength(transformedImage) > MAX_IMAGE_SIZE;
 
-    // upload transformed image back to S3 if required in the architecture
-    if (S3_TRANSFORMED_IMAGE_BUCKET) {
-        startTime = performance.now();
-        try {
-            const putImageCommand = new PutObjectCommand({
-                Body: transformedImage,
-                Bucket: S3_TRANSFORMED_IMAGE_BUCKET,
-                Key: originalImagePath + '/' + operationsPrefix,
-                ContentType: contentType,
-                Metadata: {
-                    'cache-control': TRANSFORMED_IMAGE_CACHE_TTL,
-                },
-            })
-            await s3Client.send(putImageCommand);
-            timingLog = timingLog + ',img-upload;dur=' + parseInt(performance.now() - startTime);
-            // If the generated image file is too big, send a redirection to the generated image on S3, instead of serving it synchronously from Lambda. 
-            if (imageTooBig) {
-                return {
-                    statusCode: 302,
-                    headers: {
-                        'Location': '/' + originalImagePath + '?' + operationsPrefix.replace(/,/g, "&"),
-                        'Cache-Control': 'private,no-store',
-                        'Server-Timing': timingLog
-                    }
-                };
-            }
-        } catch (error) {
-            logError('Could not upload transformed image to S3', error);
-        }
-    }
 
-    // Return error if the image is too big and a redirection to the generated image was not possible, else return transformed image
-    if (imageTooBig) {
-        return sendError(403, 'Requested transformed image is too big', '');
-    } else return {
+    startTime = performance.now();
+    try {
+        const putImageCommand = new PutObjectCommand({
+            Body: transformedImage,
+            Bucket: S3_TRANSFORMED_IMAGE_BUCKET,
+            Key: originalImagePath + '/' + operationsPrefix,
+            ContentType: contentType,
+            Metadata: {
+                'cache-control': TRANSFORMED_IMAGE_CACHE_TTL,
+            },
+        })
+        await s3Client.send(putImageCommand);
+        timingLog = timingLog + ',img-upload;dur=' + parseInt(performance.now() - startTime);
+        // If the generated image file is too big, send a redirection to the generated image on S3, instead of serving it synchronously from Lambda. 
+        if (imageTooBig) {
+            return {
+                statusCode: 302,
+                headers: {
+                    'Location': '/' + originalImagePath + '?' + operationsPrefix.replace(/,/g, "&"),
+                    'Cache-Control': 'private,no-store',
+                    'Server-Timing': timingLog
+                }
+            };
+        }
+    } catch (error) {
+        logError('Could not upload transformed image to S3', error);
+    }
+    
+    return {
         statusCode: 200,
         body: transformedImage.toString('base64'),
         isBase64Encoded: true,
