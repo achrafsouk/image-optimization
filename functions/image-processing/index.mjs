@@ -66,6 +66,9 @@ export const handler = async (event) => {
                     quality: parseInt(operationsJSON['quality']),
                 });
             } else transformedImage = transformedImage.toFormat(operationsJSON['format']);
+        } else {
+            console.log('exception');
+            if (contentType === 'image/svg+xml') contentType = 'image/png';
         }
         transformedImage = await transformedImage.toBuffer();
     } catch (error) {
